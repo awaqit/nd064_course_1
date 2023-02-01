@@ -1,17 +1,25 @@
 import sqlite3
+# import logging.config
 
 from flask import Flask, jsonify, json, render_template, request, url_for, redirect, flash
 from werkzeug.exceptions import abort
+from collections import defaultdict
 
+# logging.config.fileConfig('logging.conf')
+# logger = logging.getLogger('app')
+perf_stats = defaultdict(int)
 # Function to get a database connection.
 # This function connects to database with the name `database.db`
 def get_db_connection():
     connection = sqlite3.connect('database.db')
     connection.row_factory = sqlite3.Row
+    global perf_stats
+    perf_stats['db_connection_count'] += 1
     return connection
 
 # Function to get a post using its ID
 def get_post(post_id):
+    perf_stats['get_post_count'] += 1
     connection = get_db_connection()
     post = connection.execute('SELECT * FROM posts WHERE id = ?',
                         (post_id,)).fetchone()
@@ -64,6 +72,34 @@ def create():
             return redirect(url_for('index'))
 
     return render_template('create.html')
+
+@app.route('/healthz')
+def healthcheck():
+    response = app.response_class(
+            response=json.dumps({"result":"OK - healthy"}),
+            status=200,
+            mimetype='application/json'
+    )
+    app.logger.info('Status request successfull')
+    app.logger.debug('DEBUG message')
+    return response
+
+@app.route('/metrics')
+def metrics():
+        
+    connection = get_db_connection()
+    # get amounts of posts in the databasse
+    posts = connection.execute('SELECT * FROM posts').fetchall()
+    connection.close()
+    # get amount of connections to the database
+    response = app.response_class(
+            response=json.dumps({"db_connection_count": config.counter, "post_count": len(posts)}),
+            status=200,
+            mimetype='application/json'
+    )
+    app.logger.info('Metrics request successfull')
+    return response
+
 
 # start the application on port 3111
 if __name__ == "__main__":
