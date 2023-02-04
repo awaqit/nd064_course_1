@@ -6,7 +6,7 @@ metadata:
   labels:
     app: techtrends
   name: techtrends
-  namespace: techtrends
+  namespace: sandbox
 spec:
   replicas: 1
   selector:
@@ -18,7 +18,7 @@ spec:
         app: techtrends
     spec:
       containers:
-      - image: abgo/techtrends:latest
+      - image: awaqit/techtrends:latest
         imagePullPolicy: Always
         name: techtrends
         ports:
