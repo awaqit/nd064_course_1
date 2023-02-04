@@ -1,12 +1,11 @@
 import sqlite3
-# import logging.config
+import logging
+import sys
 
 from flask import Flask, jsonify, json, render_template, request, url_for, redirect, flash
 from werkzeug.exceptions import abort
 from collections import defaultdict
 
-# logging.config.fileConfig('logging.conf')
-# logger = logging.getLogger('app')
 perf_stats = defaultdict(int)
 # Function to get a database connection.
 # This function connects to database with the name `database.db`
@@ -91,9 +90,8 @@ def metrics():
     # get amounts of posts in the databasse
     posts = connection.execute('SELECT * FROM posts').fetchall()
     connection.close()
-    # get amount of connections to the database
     response = app.response_class(
-            response=json.dumps({"db_connection_count": config.counter, "post_count": len(posts)}),
+            response=json.dumps({"db_connection_count": perf_stats['db_connection_count'], "post_count": len(posts)}),
             status=200,
             mimetype='application/json'
     )
@@ -103,4 +101,10 @@ def metrics():
 
 # start the application on port 3111
 if __name__ == "__main__":
+   stdout_handler = logging.StreamHandler(sys.stdout)
+   stderr_handler = logging.StreamHandler(sys.stderr)
+   log_handlers = [stdout_handler, stderr_handler]
+   
+   logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] [%(levelname)s] - %(message)s', handlers=log_handlers)
+   logger = logging.getLogger()
    app.run(host='0.0.0.0', port='3111')
